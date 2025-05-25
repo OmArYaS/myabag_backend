@@ -24,5 +24,9 @@ app.use("/api/order", orderRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/user", userRoutes);
 
+app.get("/healthz", (req, res) => {
+  res.status(200).json({ message: "OK" });
+});
+
 
 
