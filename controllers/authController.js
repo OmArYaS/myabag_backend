@@ -43,12 +43,12 @@ export async function register(req, res) {
       return res.status(409).json({ message: "User already exists." });
 
     // تشفير الباسورد
-    const hash = await bcrypt.hash(password, 10);
+    // const hash = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       username,
       email,
-      password: hash,
+      password,
       ...rest, // age, address, phone...
     });
 
