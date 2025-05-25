@@ -13,6 +13,17 @@ DBconn().then(() => {
     console.log(`Server running on port ${PORT}`);
   });
 });
+
+import fetch from "node-fetch";
+
+const getIP = async () => {
+  const res = await fetch("https://api.ipify.org?format=json");
+  const data = await res.json();
+  console.log("Public IP:", data.ip);
+};
+
+getIP();
+
 // async function getProductsByCategoryId() {
 //   const categoryId = "6829f897272c083e41ce9ce0";
 
