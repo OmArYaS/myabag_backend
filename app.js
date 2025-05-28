@@ -7,15 +7,17 @@ import wishlistRoutes from "./routes/wishlistRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import { authenticate } from "./middlewares/authenticate.js";
 import { authorize } from "./middlewares/authorize.js";
+import { transformResponse } from "./middlewares/addDoman.js";
 
-import cors from "cors"
+import cors from "cors";
 import categoryRoutes from "./routes/categoryRoutes.js";
 
 export const app = express();
-app.use(cors())
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/images", express.static("public/images"));
+app.use(transformResponse);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", appRoutes);
 app.use("/api/categories", categoryRoutes);
@@ -27,6 +29,3 @@ app.use("/api/user", userRoutes);
 app.get("/healthz", (req, res) => {
   res.status(200).json({ message: "OK" });
 });
-
-
-

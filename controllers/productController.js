@@ -2,6 +2,24 @@ import mongoose from "mongoose";
 import { Product } from "../models/product.js";
 import { Order } from "../models/order.js";
 
+// Middleware to add base URL to image paths
+const addBaseUrlToImage = (req, data) => {
+  const baseUrl =
+    process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+
+  if (Array.isArray(data)) {
+    return data.map((item) => ({
+      ...item.toObject(),
+      image: `${baseUrl}${item.image}`,
+    }));
+  }
+
+  return {
+    ...data.toObject(),
+    image: `${baseUrl}${data.image}`,
+  };
+};
+
 export async function getProducts(req, res) {
   try {
     const {
@@ -37,16 +55,8 @@ export async function getProducts(req, res) {
 
     const total = await Product.countDocuments(filter);
 
-    // Add base URL to image paths
-    const baseUrl =
-      process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
-    const productsWithFullImageUrl = products.map((product) => ({
-      ...product.toObject(),
-      image: `${baseUrl}${product.image}`,
-    }));
-
     res.status(200).json({
-      data: productsWithFullImageUrl,
+      data: products,
       page: parseInt(page),
       totalPages: Math.ceil(limit == 0 ? 1 : total / limit),
       totalItems: total,
@@ -67,14 +77,7 @@ export async function getProductById(req, res) {
   try {
     const data = await Product.findById(id);
     if (data) {
-      // Add base URL to the image path
-      const baseUrl =
-        process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
-      const productWithFullImageUrl = {
-        ...data.toObject(),
-        image: `${baseUrl}${data.image}`,
-      };
-      res.status(200).json(productWithFullImageUrl);
+      res.status(200).json(data);
     } else {
       res.status(404).json({ message: "Product not found" });
     }
@@ -113,16 +116,7 @@ export async function createProduct(req, res) {
     });
 
     const savedProduct = await newProduct.save();
-
-    // Add base URL to the response
-    const baseUrl =
-      process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
-    const productWithFullImageUrl = {
-      ...savedProduct.toObject(),
-      image: `${baseUrl}${savedProduct.image}`,
-    };
-
-    res.status(201).json(productWithFullImageUrl);
+    res.status(201).json(savedProduct);
   } catch (error) {
     console.error("Error creating product:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -158,14 +152,7 @@ export async function updateProduct(req, res) {
     });
 
     if (updatedProduct) {
-      // Add base URL to the image path
-      const baseUrl =
-        process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
-      const productWithFullImageUrl = {
-        ...updatedProduct.toObject(),
-        image: `${baseUrl}${updatedProduct.image}`,
-      };
-      res.status(200).json(productWithFullImageUrl);
+      res.status(200).json(updatedProduct);
     } else {
       res.status(404).json({ message: "Product not found" });
     }
@@ -205,14 +192,7 @@ export async function getProductByCategory(req, res) {
   try {
     const products = await Product.find({ category });
     if (products.length > 0) {
-      // Add base URL to all product images
-      const baseUrl =
-        process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
-      const productsWithFullImageUrl = products.map((product) => ({
-        ...product.toObject(),
-        image: `${baseUrl}${product.image}`,
-      }));
-      res.status(200).json(productsWithFullImageUrl);
+      res.status(200).json(products);
     } else {
       res.status(404).json({ message: "No products found in this category" });
     }
