@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import { domen } from "../utils/help.js";
-
+import dotenv from "dotenv";
+dotenv.config();
 const productSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -46,7 +46,7 @@ const productSchema = new mongoose.Schema({
 });
 productSchema.methods.toJSON = function () {
   const obj = this.toObject();
-  obj.image = `${domen()}${obj.image}`;
+  obj.image = `${process.env.BASE_URL}${obj.image}`;
   return obj;
 };
 
