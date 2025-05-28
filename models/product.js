@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { domen } from "../utils/help.js";
 
 const productSchema = new mongoose.Schema({
   name: {
@@ -43,5 +44,12 @@ const productSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+productSchema.methods.toJSON = function () {
+  const obj = this.toObject();
+  obj.image = `${domen()}${obj.image}`;
+  return obj;
+};
+
 export const Product = mongoose.model("Product", productSchema);
+
 

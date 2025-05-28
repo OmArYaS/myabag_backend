@@ -2,24 +2,6 @@ import mongoose from "mongoose";
 import { Product } from "../models/product.js";
 import { Order } from "../models/order.js";
 
-// Middleware to add base URL to image paths
-const addBaseUrlToImage = (req, data) => {
-  const baseUrl =
-    process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
-
-  if (Array.isArray(data)) {
-    return data.map((item) => ({
-      ...item.toObject(),
-      image: `${baseUrl}${item.image}`,
-    }));
-  }
-
-  return {
-    ...data.toObject(),
-    image: `${baseUrl}${data.image}`,
-  };
-};
-
 export async function getProducts(req, res) {
   try {
     const {
@@ -50,8 +32,7 @@ export async function getProducts(req, res) {
     const products = await Product.find(filter)
       .sort({ [sort]: order === "asc" ? 1 : -1 })
       .skip(skip)
-      .limit(parseInt(limit))
-      .populate("category");
+      .limit(parseInt(limit)).populate("category");
 
     const total = await Product.countDocuments(filter);
 
@@ -101,11 +82,11 @@ export async function createProduct(req, res) {
 
   try {
     const imageFilename = req.file.filename;
-    const imagePath = `/images/${imageFilename}`; // Store only the relative path
+    const imageUrl = `/images/${imageFilename}`; // الرابط الكامل للصورة
 
     const newProduct = new Product({
       name,
-      image: imagePath,
+      image: imageUrl,
       brand,
       stock,
       color,
@@ -127,37 +108,28 @@ export async function updateProduct(req, res) {
   const { id } = req.params;
   const cleanBody = {};
   Object.entries(req.body).forEach(([key, value]) => {
-    if (
-      value !== "" &&
-      value !== "null" &&
-      value !== undefined &&
-      value !== "0"
-    ) {
+    if (value !== "" && value !== "null" && value !== undefined && value !== "0") {
       cleanBody[key] = value;
     }
+    
   });
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ message: "Invalid product ID" });
   }
-
+  console.log(cleanBody);
+    
   try {
-    // If there's a new image file, update the image path
-    if (req.file) {
-      cleanBody.image = `/images/${req.file.filename}`;
-    }
-
     const updatedProduct = await Product.findByIdAndUpdate(id, cleanBody, {
       new: true,
     });
-
     if (updatedProduct) {
       res.status(200).json(updatedProduct);
     } else {
       res.status(404).json({ message: "Product not found" });
     }
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error45", error: error.message });
   }
 }
 
