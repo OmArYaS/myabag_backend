@@ -32,12 +32,21 @@ export async function getProducts(req, res) {
     const products = await Product.find(filter)
       .sort({ [sort]: order === "asc" ? 1 : -1 })
       .skip(skip)
-      .limit(parseInt(limit)).populate("category");
+      .limit(parseInt(limit))
+      .populate("category");
 
     const total = await Product.countDocuments(filter);
 
+    // Add base URL to image paths
+    const baseUrl =
+      process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+    const productsWithFullImageUrl = products.map((product) => ({
+      ...product.toObject(),
+      image: `${baseUrl}${product.image}`,
+    }));
+
     res.status(200).json({
-      data: products,
+      data: productsWithFullImageUrl,
       page: parseInt(page),
       totalPages: Math.ceil(limit == 0 ? 1 : total / limit),
       totalItems: total,
@@ -58,7 +67,14 @@ export async function getProductById(req, res) {
   try {
     const data = await Product.findById(id);
     if (data) {
-      res.status(200).json(data);
+      // Add base URL to the image path
+      const baseUrl =
+        process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+      const productWithFullImageUrl = {
+        ...data.toObject(),
+        image: `${baseUrl}${data.image}`,
+      };
+      res.status(200).json(productWithFullImageUrl);
     } else {
       res.status(404).json({ message: "Product not found" });
     }
@@ -82,12 +98,11 @@ export async function createProduct(req, res) {
 
   try {
     const imageFilename = req.file.filename;
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-    const imageUrl = `${baseUrl}/images/${imageFilename}`; // الرابط الكامل للصورة
+    const imagePath = `/images/${imageFilename}`; // Store only the relative path
 
     const newProduct = new Product({
       name,
-      image: imageUrl,
+      image: imagePath,
       brand,
       stock,
       color,
@@ -98,7 +113,16 @@ export async function createProduct(req, res) {
     });
 
     const savedProduct = await newProduct.save();
-    res.status(201).json(savedProduct);
+
+    // Add base URL to the response
+    const baseUrl =
+      process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+    const productWithFullImageUrl = {
+      ...savedProduct.toObject(),
+      image: `${baseUrl}${savedProduct.image}`,
+    };
+
+    res.status(201).json(productWithFullImageUrl);
   } catch (error) {
     console.error("Error creating product:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -109,28 +133,44 @@ export async function updateProduct(req, res) {
   const { id } = req.params;
   const cleanBody = {};
   Object.entries(req.body).forEach(([key, value]) => {
-    if (value !== "" && value !== "null" && value !== undefined && value !== "0") {
+    if (
+      value !== "" &&
+      value !== "null" &&
+      value !== undefined &&
+      value !== "0"
+    ) {
       cleanBody[key] = value;
     }
-    
   });
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ message: "Invalid product ID" });
   }
-  console.log(cleanBody);
-    
+
   try {
+    // If there's a new image file, update the image path
+    if (req.file) {
+      cleanBody.image = `/images/${req.file.filename}`;
+    }
+
     const updatedProduct = await Product.findByIdAndUpdate(id, cleanBody, {
       new: true,
     });
+
     if (updatedProduct) {
-      res.status(200).json(updatedProduct);
+      // Add base URL to the image path
+      const baseUrl =
+        process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+      const productWithFullImageUrl = {
+        ...updatedProduct.toObject(),
+        image: `${baseUrl}${updatedProduct.image}`,
+      };
+      res.status(200).json(productWithFullImageUrl);
     } else {
       res.status(404).json({ message: "Product not found" });
     }
   } catch (error) {
-    res.status(500).json({ message: "Server error45", error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 }
 
@@ -165,7 +205,14 @@ export async function getProductByCategory(req, res) {
   try {
     const products = await Product.find({ category });
     if (products.length > 0) {
-      res.status(200).json(products);
+      // Add base URL to all product images
+      const baseUrl =
+        process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+      const productsWithFullImageUrl = products.map((product) => ({
+        ...product.toObject(),
+        image: `${baseUrl}${product.image}`,
+      }));
+      res.status(200).json(productsWithFullImageUrl);
     } else {
       res.status(404).json({ message: "No products found in this category" });
     }
