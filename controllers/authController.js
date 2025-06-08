@@ -23,10 +23,11 @@ export async function register(req, res) {
           "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number, no symbols.",
       });
     // تأكد من أن اليوزر نيم صحيح
-    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    const usernameRegex = /^[a-zA-Z0-9_\s]{3,20}$/;
     if (!usernameRegex.test(username))
       return res.status(400).json({
-        message: "Username must be 3-20 characters long and alphanumeric.",
+        message:
+          "Username must be 3-20 characters long and can contain letters, numbers, underscores, and spaces.",
       });
     // تأكد من أن باقي الحقول صحيحة
     const restKeys = Object.keys(rest);

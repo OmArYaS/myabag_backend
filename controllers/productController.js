@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 import { Product } from "../models/product.js";
 import { Order } from "../models/order.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Get the directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function getProducts(req, res) {
   try {
@@ -32,7 +39,8 @@ export async function getProducts(req, res) {
     const products = await Product.find(filter)
       .sort({ [sort]: order === "asc" ? 1 : -1 })
       .skip(skip)
-      .limit(parseInt(limit)).populate("category");
+      .limit(parseInt(limit))
+      .populate("category");
 
     const total = await Product.countDocuments(filter);
 
@@ -108,17 +116,21 @@ export async function updateProduct(req, res) {
   const { id } = req.params;
   const cleanBody = {};
   Object.entries(req.body).forEach(([key, value]) => {
-    if (value !== "" && value !== "null" && value !== undefined && value !== "0") {
+    if (
+      value !== "" &&
+      value !== "null" &&
+      value !== undefined &&
+      value !== "0"
+    ) {
       cleanBody[key] = value;
     }
-    
   });
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ message: "Invalid product ID" });
   }
   console.log(cleanBody);
-    
+
   try {
     const updatedProduct = await Product.findByIdAndUpdate(id, cleanBody, {
       new: true,
@@ -145,6 +157,21 @@ export async function deleteProduct(req, res) {
     const orders = await Order.find({ "products.productId": id });
     if (orders.length > 0) {
       return res.status(400).json({ message: "Product has orders" });
+    }
+
+    //remove the product's image from the server
+    const product = await Product.findById(id);
+    if (product) {
+      try {
+        // Get the image filename from the path
+        const imagePath = path.join(__dirname, "..", "public", product.image);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      } catch (error) {
+        console.error("Error deleting image:", error);
+        // Continue with product deletion even if image deletion fails
+      }
     }
 
     const deletedProduct = await Product.findByIdAndDelete(id);
