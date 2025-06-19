@@ -78,7 +78,7 @@ export const getAllOrders = async (req, res) => {
 
     const orders = await Order.find(query)
       .populate("userId", "username email phone age address") // Only populate necessary fields
-      .populate("products.productId", "name price image") // Only populate necessary fields
+      .populate("products.productId", "name price images") // Only populate necessary fields
       .sort({ [sort]: order === "asc" ? 1 : -1 })
       .skip(skip)
       .limit(parseInt(limit));

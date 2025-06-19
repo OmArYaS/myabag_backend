@@ -8,14 +8,14 @@ import {
 } from "../controllers/productController.js";
 import { authenticate } from "../middlewares/authenticate.js";
 import { authorize } from "../middlewares/authorize.js";
-import upload from "../middlewares/upload.js";
+import { uploadMultiple } from "../middlewares/upload.js";
 
 const router = express.Router();
 
 router.get("/", getProducts);
 router.get("/id/:id", getProductById);
-router.post("/add",upload.single("image"), authenticate, authorize("admin"), createProduct);
-router.put("/update/:id",upload.single("image"), authenticate, authorize("admin"), updateProduct);
+router.post("/add", uploadMultiple, authenticate, authorize("admin"), createProduct);
+router.put("/update/:id", uploadMultiple, authenticate, authorize("admin"), updateProduct);
 router.delete("/delete/:id", authenticate, authorize("admin"), deleteProduct);
 
 export default router;

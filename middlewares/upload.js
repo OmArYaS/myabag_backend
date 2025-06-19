@@ -24,4 +24,9 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
+// For single image upload (if needed elsewhere)
+export const uploadSingle = upload.single("image");
+// For multiple images upload (for products)
+export const uploadMultiple = upload.array("images", 10); // max 10 images per product
+
 export default upload;
