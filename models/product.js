@@ -6,8 +6,8 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  image: {
-    type: String,
+  images: {
+    type: [String],
     required: true,
   },
   brand: {
@@ -46,10 +46,10 @@ const productSchema = new mongoose.Schema({
 });
 productSchema.methods.toJSON = function () {
   const obj = this.toObject();
-  obj.image = `${process.env.BASE_URL}${obj.image}`;
+  if (obj.images && Array.isArray(obj.images)) {
+    obj.images = obj.images.map((img) => `${process.env.BASE_URL}${img}`);
+  }
   return obj;
 };
 
 export const Product = mongoose.model("Product", productSchema);
-
-

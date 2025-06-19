@@ -79,9 +79,9 @@ export async function createProduct(req, res) {
   const { name, brand, stock, color, size, price, description, category } =
     req.body;
 
-  // نتأكد إن في صورة
-  if (!req.file) {
-    return res.status(400).json({ message: "Image is required" });
+  // Ensure images are uploaded
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ message: "At least one image is required" });
   }
 
   if (!name || !price || !description || !category) {
@@ -89,12 +89,11 @@ export async function createProduct(req, res) {
   }
 
   try {
-    const imageFilename = req.file.filename;
-    const imageUrl = `/images/${imageFilename}`; // الرابط الكامل للصورة
+    const imageUrls = req.files.map((file) => `/images/${file.filename}`);
 
     const newProduct = new Product({
       name,
-      image: imageUrl,
+      images: imageUrls,
       brand,
       stock,
       color,
@@ -159,18 +158,19 @@ export async function deleteProduct(req, res) {
       return res.status(400).json({ message: "Product has orders" });
     }
 
-    //remove the product's image from the server
+    //remove the product's images from the server
     const product = await Product.findById(id);
-    if (product) {
-      try {
-        // Get the image filename from the path
-        const imagePath = path.join(__dirname, "..", "public", product.image);
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
+    if (product && product.images && Array.isArray(product.images)) {
+      for (const imgPath of product.images) {
+        try {
+          const imagePath = path.join(__dirname, "..", "public", imgPath);
+          if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath);
+          }
+        } catch (error) {
+          console.error("Error deleting image:", error);
+          // Continue with product deletion even if image deletion fails
         }
-      } catch (error) {
-        console.error("Error deleting image:", error);
-        // Continue with product deletion even if image deletion fails
       }
     }
 
