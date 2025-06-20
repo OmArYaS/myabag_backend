@@ -128,9 +128,36 @@ export async function updateProduct(req, res) {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ message: "Invalid product ID" });
   }
-  console.log(cleanBody);
 
   try {
+    // If new images are uploaded, handle image replacement
+    if (req.files && req.files.length > 0) {
+      // Get the existing product to delete old images
+      const existingProduct = await Product.findById(id);
+      if (
+        existingProduct &&
+        existingProduct.images &&
+        Array.isArray(existingProduct.images)
+      ) {
+        // Delete old images from server
+        for (const imgPath of existingProduct.images) {
+          try {
+            const imagePath = path.join(__dirname, "..", "public", imgPath);
+            if (fs.existsSync(imagePath)) {
+              fs.unlinkSync(imagePath);
+            }
+          } catch (error) {
+            console.error("Error deleting old image:", error);
+            // Continue even if image deletion fails
+          }
+        }
+      }
+
+      // Add new image URLs to cleanBody
+      const imageUrls = req.files.map((file) => `/images/${file.filename}`);
+      cleanBody.images = imageUrls;
+    }
+
     const updatedProduct = await Product.findByIdAndUpdate(id, cleanBody, {
       new: true,
     });

@@ -4,7 +4,7 @@ import { Order } from "../models/order.js";
 import mongoose from "mongoose";
 
 export const addToCart = async (req, res) => {
-  const { productId, quantity } = req.body;
+  const { productId, quantity, color } = req.body;
   const userId = req.user.id;
 
   try {
@@ -17,6 +17,27 @@ export const addToCart = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    let finalColor = color;
+    // Validate color if product has colors
+    if (
+      product.color &&
+      Array.isArray(product.color) &&
+      product.color.length > 0 &&
+      color
+    ) {
+      if (!product.color.includes(color)) {
+        return res.status(400).json({ message: "Please select a valid color" });
+      }
+    } else if (
+      product.color &&
+      Array.isArray(product.color) &&
+      product.color.length > 0 &&
+      !color
+    ) {
+      // If product has colors but no color selected, use first color as default
+      finalColor = product.color[0];
+    }
+
     // Check if the requested quantity is available
     const cart = await Cart.findOne({ userId });
 
@@ -24,7 +45,9 @@ export const addToCart = async (req, res) => {
 
     if (cart) {
       const existingProduct = cart.products.find(
-        (item) => item.productId.toString() === productId
+        (item) =>
+          item.productId.toString() === productId &&
+          item.color === (finalColor || null)
       );
       if (existingProduct) {
         currentQuantityInCart = existingProduct.quantity;
@@ -39,18 +62,20 @@ export const addToCart = async (req, res) => {
     // Add or update cart
     if (cart) {
       const existingProduct = cart.products.find(
-        (item) => item.productId.toString() === productId
+        (item) =>
+          item.productId.toString() === productId &&
+          item.color === (finalColor || null)
       );
       if (existingProduct) {
         existingProduct.quantity += quantity;
       } else {
-        cart.products.push({ productId, quantity });
+        cart.products.push({ productId, quantity, color: finalColor });
       }
       await cart.save();
     } else {
       const newCart = new Cart({
         userId,
-        products: [{ productId, quantity }],
+        products: [{ productId, quantity, color: finalColor }],
       });
       await newCart.save();
     }
@@ -84,6 +109,7 @@ export const getCart = async (req, res) => {
       cart: cart.products.map((item) => ({
         _id: item._id,
         quantity: item.quantity,
+        color: item.color,
         product: item.productId,
       })),
       totalQuantity,
@@ -145,7 +171,7 @@ export const clearCart = async (req, res) => {
 };
 
 export const updateCart = async (req, res) => {
-  const { productId, quantity } = req.body;
+  const { productId, quantity, color } = req.body;
   const userId = req.user.id;
 
   try {
@@ -177,6 +203,9 @@ export const updateCart = async (req, res) => {
       cart.products.splice(productIndex, 1);
     } else {
       cart.products[productIndex].quantity = quantity;
+      if (color) {
+        cart.products[productIndex].color = color;
+      }
     }
 
     await cart.save();
@@ -227,6 +256,7 @@ export const checkout = async (req, res) => {
         quantity: item.quantity,
         price: product.price,
         name: product.name,
+        color: item.color,
       });
       totalAmount += product.price * item.quantity;
     }
@@ -245,6 +275,7 @@ export const checkout = async (req, res) => {
       products: availableProducts.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
+        color: item.color,
       })),
       totalAmount,
       status: "Pending",

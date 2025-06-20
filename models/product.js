@@ -19,7 +19,7 @@ const productSchema = new mongoose.Schema({
     required: false,
   },
   color: {
-    type: String,
+    type: [String],
     required: false,
   },
   size: {

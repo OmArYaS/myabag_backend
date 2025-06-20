@@ -17,6 +17,10 @@ export const orderSchema = new mongoose.Schema({
         type: Number,
         required: true,
       },
+      color: {
+        type: String,
+        required: false,
+      },
     },
   ],
   totalAmount: {
@@ -25,7 +29,7 @@ export const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Pending","Preparing", "Shipped", "Delivered", "Cancelled"],
+    enum: ["Pending", "Preparing", "Shipped", "Delivered", "Cancelled"],
     default: "Pending",
   },
   orderDate: {
