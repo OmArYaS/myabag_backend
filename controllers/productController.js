@@ -4,6 +4,8 @@ import { Order } from "../models/order.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { uploadMultipleToCloudinary } from "../middlewares/upload.js";
+import { v2 as cloudinary } from "cloudinary";
 
 // Get the directory name
 const __filename = fileURLToPath(import.meta.url);
@@ -89,11 +91,12 @@ export async function createProduct(req, res) {
   }
 
   try {
-    const imageUrls = req.files.map((file) => `/images/${file.filename}`);
+    // رفع الصور إلى Cloudinary
+    const uploadedImages = await uploadMultipleToCloudinary(req.files); // [{url, public_id}]
 
     const newProduct = new Product({
       name,
-      images: imageUrls,
+      images: uploadedImages, // array of {url, public_id}
       brand,
       stock,
       color,
@@ -132,30 +135,29 @@ export async function updateProduct(req, res) {
   try {
     // If new images are uploaded, handle image replacement
     if (req.files && req.files.length > 0) {
-      // Get the existing product to delete old images
+      // Get the existing product to delete old images from Cloudinary
       const existingProduct = await Product.findById(id);
       if (
         existingProduct &&
         existingProduct.images &&
         Array.isArray(existingProduct.images)
       ) {
-        // Delete old images from server
-        for (const imgPath of existingProduct.images) {
+        // Delete old images from Cloudinary
+        for (const imgObj of existingProduct.images) {
           try {
-            const imagePath = path.join(__dirname, "..", "public", imgPath);
-            if (fs.existsSync(imagePath)) {
-              fs.unlinkSync(imagePath);
+            if (imgObj.public_id) {
+              await cloudinary.uploader.destroy(imgObj.public_id);
             }
           } catch (error) {
-            console.error("Error deleting old image:", error);
+            console.error("Error deleting old image from Cloudinary:", error);
             // Continue even if image deletion fails
           }
         }
       }
 
-      // Add new image URLs to cleanBody
-      const imageUrls = req.files.map((file) => `/images/${file.filename}`);
-      cleanBody.images = imageUrls;
+      // رفع الصور الجديدة إلى Cloudinary
+      const uploadedImages = await uploadMultipleToCloudinary(req.files); // [{url, public_id}]
+      cleanBody.images = uploadedImages;
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(id, cleanBody, {
@@ -185,17 +187,16 @@ export async function deleteProduct(req, res) {
       return res.status(400).json({ message: "Product has orders" });
     }
 
-    //remove the product's images from the server
+    //remove the product's images from Cloudinary
     const product = await Product.findById(id);
     if (product && product.images && Array.isArray(product.images)) {
-      for (const imgPath of product.images) {
+      for (const imgObj of product.images) {
         try {
-          const imagePath = path.join(__dirname, "..", "public", imgPath);
-          if (fs.existsSync(imagePath)) {
-            fs.unlinkSync(imagePath);
+          if (imgObj.public_id) {
+            await cloudinary.uploader.destroy(imgObj.public_id);
           }
         } catch (error) {
-          console.error("Error deleting image:", error);
+          console.error("Error deleting image from Cloudinary:", error);
           // Continue with product deletion even if image deletion fails
         }
       }
