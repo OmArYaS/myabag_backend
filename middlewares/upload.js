@@ -44,8 +44,9 @@ export const uploadMultipleToCloudinary = async (files) => {
   return await Promise.all(uploadPromises); // array of {url, public_id}
 };
 
-// Multer middleware
+// Multer middlewared
 export const uploadSingle = upload.single("image"); // صورة واحدة
 export const uploadMultiple = upload.array("images", 10); // صور متعددة (حد أقصى 10)
 
 export default upload;
+ 
