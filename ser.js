@@ -1,9 +1,14 @@
 // server.js
 import mongoose from "mongoose";
+import dotenv from "dotenv";
 
-const uri =
-  "mongodb+srv://mry097760_db_user:RtfwpjjIOiUAdF2o@cluster0.m8v6tvg.mongodb.net/myabag?retryWrites=true&w=majority";
-  
+dotenv.config();
+
+const uri = process.env.MONGO_URI;
+
+if (!uri) {
+  throw new Error("MONGO_URI is not defined in .env file");
+}
 
 try {
   await mongoose.connect(uri);

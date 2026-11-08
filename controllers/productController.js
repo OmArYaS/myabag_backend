@@ -79,8 +79,12 @@ export async function createProduct(req, res) {
   const { name, brand, stock, color, size, price, description, category } =
     req.body;
 
-  // نتأكد إن في صورة
-  if (!req.file) {
+  // نتأكد إن في صورة (يدعم الحقل image أو images)
+  const uploadedFiles = req.files;
+  const fileArray =
+    (uploadedFiles && (uploadedFiles.image || uploadedFiles.images)) || [];
+
+  if (!fileArray || fileArray.length === 0) {
     return res.status(400).json({ message: "Image is required" });
   }
 
@@ -89,8 +93,8 @@ export async function createProduct(req, res) {
   }
 
   try {
-    const imageFilename = req.file.filename;
-    const imageUrl = `/images/${imageFilename}`; // الرابط الكامل للصورة
+    // Cloudinary يرفع الصورة ويعيد رابط آمن (secure_url)
+    const imageUrl = fileArray[0].path || fileArray[0].url;
 
     const newProduct = new Product({
       name,
@@ -129,7 +133,14 @@ export async function updateProduct(req, res) {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ message: "Invalid product ID" });
   }
-  console.log(cleanBody);
+
+  // Handle image update
+  const uploadedFiles = req.files;
+  const fileArray =
+    (uploadedFiles && (uploadedFiles.image || uploadedFiles.images)) || [];
+  if (fileArray && fileArray.length > 0) {
+    cleanBody.image = fileArray[0].path || fileArray[0].url;
+  }
 
   try {
     const updatedProduct = await Product.findByIdAndUpdate(id, cleanBody, {
@@ -141,7 +152,7 @@ export async function updateProduct(req, res) {
       res.status(404).json({ message: "Product not found" });
     }
   } catch (error) {
-    res.status(500).json({ message: "Server error45", error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 }
 
@@ -159,19 +170,10 @@ export async function deleteProduct(req, res) {
       return res.status(400).json({ message: "Product has orders" });
     }
 
-    //remove the product's image from the server
     const product = await Product.findById(id);
     if (product) {
-      try {
-        // Get the image filename from the path
-        const imagePath = path.join(__dirname, "..", "public", product.image);
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
-        }
-      } catch (error) {
-        console.error("Error deleting image:", error);
-        // Continue with product deletion even if image deletion fails
-      }
+      // If image is a Cloudinary URL, we don't delete from local disk
+      // Cloudinary images can be deleted via API if needed
     }
 
     const deletedProduct = await Product.findByIdAndDelete(id);

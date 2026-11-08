@@ -8,40 +8,27 @@ env.config();
 
 const PORT = process.env.PORT || 3000;
 
-DBconn().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+DBconn()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ Failed to connect to MongoDB:", err.message);
+    process.exit(1);
   });
-});
 
 import fetch from "node-fetch";
 
 const getIP = async () => {
-  const res = await fetch("https://api.ipify.org?format=json");
-  const data = await res.json();
-  console.log("Public IP:", data.ip);
+  try {
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    console.log("Public IP:", data.ip);
+  } catch (err) {
+    console.error("⚠️  Could not fetch public IP:", err.message);
+  }
 };
 
 getIP();
-
-// async function getProductsByCategoryId() {
-//   const categoryId = "6829f897272c083e41ce9ce0";
-
-//   const products = await Product.find({
-//     category: new mongoose.Types.ObjectId(categoryId),
-//   }).populate("category");
-
-//   console.log(products);
-//   console.log(mongoose.isValidObjectId(categoryId));
-// }
-
-// getProductsByCategoryId();
-
-// async function getProductWithCategory() {
-//   const product = await Product.find({ name: "Classic T-Shirt" }).populate(
-//     "category"
-//   );
-//   console.log(product);
-// }
-
-// getProductWithCategory();

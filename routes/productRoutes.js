@@ -14,8 +14,20 @@ const router = express.Router();
 
 router.get("/", getProducts);
 router.get("/id/:id", getProductById);
-router.post("/add",upload.single("image"), authenticate, authorize("admin"), createProduct);
-router.put("/update/:id",upload.single("image"), authenticate, authorize("admin"), updateProduct);
+router.post(
+  "/add",
+  upload.fields([{ name: "image", maxCount: 1 }, { name: "images", maxCount: 1 }]),
+  authenticate,
+  authorize("admin"),
+  createProduct
+);
+router.put(
+  "/update/:id",
+  upload.fields([{ name: "image", maxCount: 1 }, { name: "images", maxCount: 1 }]),
+  authenticate,
+  authorize("admin"),
+  updateProduct
+);
 router.delete("/delete/:id", authenticate, authorize("admin"), deleteProduct);
 
 export default router;
