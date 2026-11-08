@@ -2,7 +2,7 @@
 import mongoose from "mongoose";
 
 const uri =
-  "mongodb+srv://mry097760_db_user:RtfwpjjIOiUAdF2o@cluster0.m8v6tvg.mongodb.net/test?retryWrites=true&w=majority";
+  "mongodb+srv://mry097760_db_user:RtfwpjjIOiUAdF2o@cluster0.m8v6tvg.mongodb.net/";
   
 
 try {
